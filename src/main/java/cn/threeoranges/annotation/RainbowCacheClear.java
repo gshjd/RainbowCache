@@ -4,7 +4,6 @@ import java.lang.annotation.*;
 
 /**
  * @author: 李小熊
- * @date: 2021/3/2 4:53 下午
  **/
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)

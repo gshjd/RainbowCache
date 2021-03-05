@@ -8,7 +8,6 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * @author: 李小熊
- * @date: 2021/3/2 5:00 下午
  **/
 public class RainbowCache {
 
@@ -55,6 +54,8 @@ public class RainbowCache {
 
     /**
      * 触发清理缓存
+     *
+     * @param key key
      */
     public void triggerCleanUp(String key) {
         long destroyTime = Long.parseLong(caches.get(key).get(DESTROY_TIME).toString());
@@ -86,10 +87,10 @@ public class RainbowCache {
      * 设置具有过期时间的缓存
      * todo time unit unrealized
      *
-     * @param key
-     * @param cache
-     * @param expiration
-     * @param timeUnit
+     * @param key        key
+     * @param cache      cache
+     * @param expiration expiration
+     * @param timeUnit   timeUnit
      */
     public void setCache(String key, Object cache, long expiration, TimeUnit timeUnit) {
         setCachesVerify(key, cache);
@@ -108,6 +109,7 @@ public class RainbowCache {
             throw new RuntimeException("value can not be null");
         }
     }
+
     public void setCachesVerify(String key) {
         if (key == null) {
             throw new RuntimeException("key can not be null");
@@ -206,7 +208,7 @@ public class RainbowCache {
         return keys;
     }
 
-    public void delete(String key) {
+    public synchronized void delete(String key) {
         caches.remove(key);
     }
 

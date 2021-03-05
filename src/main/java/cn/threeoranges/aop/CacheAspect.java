@@ -21,9 +21,7 @@ import java.util.concurrent.TimeUnit;
 
 
 /**
- * @Author: huangyifan
- * @Date: 2020/2/16 20:42
- * @Desc: 角色权限aop
+ * @author xiaoxiong
  */
 
 @Aspect
@@ -36,10 +34,10 @@ public class CacheAspect {
     /**
      * 缓存数据
      *
-     * @param pjp
-     * @param rainbowCache
-     * @return
-     * @throws Throwable
+     * @param pjp          pjp
+     * @param rainbowCache rainbowCache
+     * @return result
+     * @throws Throwable throwable
      */
     @Around("@annotation(rainbowCache)")
     public Object cache(ProceedingJoinPoint pjp, RainbowCache rainbowCache) throws Throwable {
@@ -125,9 +123,9 @@ public class CacheAspect {
     /**
      * 看门狗
      *
-     * @param lockKey
-     * @param lockValue
-     * @param lockTime
+     * @param lockKey   lockKey
+     * @param lockValue lockValue
+     * @param lockTime  lockTime
      */
     public void watchDog(String lockKey, String lockValue, Long lockTime) {
         long threadId = Thread.currentThread().getId();

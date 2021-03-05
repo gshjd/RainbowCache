@@ -6,7 +6,6 @@ import java.util.concurrent.*;
 
 /**
  * @author: 李小熊
- * @date: 2021/3/4 4:06 下午
  **/
 public class WatchDogThreadPool {
 

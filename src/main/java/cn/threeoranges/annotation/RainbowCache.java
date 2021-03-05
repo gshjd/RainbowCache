@@ -4,7 +4,6 @@ import java.lang.annotation.*;
 
 /**
  * @author: 李小熊
- * @date: 2021/3/2 4:53 下午
  **/
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
@@ -13,21 +12,29 @@ import java.lang.annotation.*;
 public @interface RainbowCache {
     /**
      * 缓存键
+     *
+     * @return String
      */
     String[] keys() default {};
 
     /**
      * 动态建
+     *
+     * @return String
      */
     String dynamicKey() default "";
 
     /**
      * 有效时间
+     *
+     * @return long
      */
     long expiration() default -1L;
 
     /**
      * 自动续约
+     *
+     * @return boolean
      */
     boolean renew() default false;
 }

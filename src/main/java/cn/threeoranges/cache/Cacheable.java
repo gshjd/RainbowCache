@@ -14,25 +14,27 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * @author: 李小熊
- * @date: 2021/3/3 6:00 下午
  **/
 public class Cacheable {
     @Resource
     private RedisTemplate<String, Object> redisTemplate;
     private final cn.threeoranges.cache.RainbowCache rainbowCache = cn.threeoranges.cache.RainbowCache.getRainbowCache();
 
-    private Cacheable() {}
+    private Cacheable() {
+    }
 
     public static Cacheable cacheable() {
         return Instance.INSTANCE;
     }
+
     /**
      * 使用本地缓存处理
      *
-     * @param pjp
-     * @param rainbowCache
-     * @return
-     * @throws Throwable
+     * @param object       objects that need to be cached
+     * @param pjp          pjp
+     * @param rainbowCache rainbowCache
+     * @return result
+     * @throws Throwable throwable
      */
     public Object localCache(Object object, ProceedingJoinPoint pjp, RainbowCache rainbowCache) throws Throwable {
         // 获取el的值
@@ -77,10 +79,10 @@ public class Cacheable {
     /**
      * 使用redis处理缓存
      *
-     * @param pjp
-     * @param rainbowCache
-     * @return
-     * @throws Throwable
+     * @param pjp          pjp
+     * @param rainbowCache rainbowCache
+     * @return result
+     * @throws Throwable throwable
      */
     public Object redisCache(ProceedingJoinPoint pjp, RainbowCache rainbowCache) throws Throwable {
         Object object = null;
@@ -126,9 +128,9 @@ public class Cacheable {
     /**
      * el表达式获取值
      *
-     * @param pjp
-     * @param el
-     * @return
+     * @param pjp pjp
+     * @param el  el expression
+     * @return el result
      */
     public String getValue(ProceedingJoinPoint pjp, String el) {
         SpelExpressionParser parserSpEl = new SpelExpressionParser();
