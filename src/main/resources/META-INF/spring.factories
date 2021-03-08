@@ -1,2 +1,2 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-  cn.threeoranges.aop
+  cn.threeoranges.aop.CacheAspect

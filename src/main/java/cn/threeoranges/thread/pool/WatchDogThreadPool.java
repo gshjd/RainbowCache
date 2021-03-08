@@ -1,6 +1,5 @@
 package cn.threeoranges.thread.pool;
 
-import org.springframework.scheduling.concurrent.ThreadPoolExecutorFactoryBean;
 
 import java.util.concurrent.*;
 

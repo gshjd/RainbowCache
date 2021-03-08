@@ -10,6 +10,7 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import javax.annotation.Resource;
@@ -26,6 +27,11 @@ import java.util.concurrent.TimeUnit;
 
 @Aspect
 public class CacheAspect {
+    @Value("rainbow.cache.type")
+    private String type;
+    private final String REDIS_TYPE = "redis";
+    private final String SIMPLE = "simple";
+
     @Resource
     private RedisTemplate<String, Object> redisTemplate;
     private final Cacheable cacheable = Cacheable.cacheable();
@@ -43,19 +49,30 @@ public class CacheAspect {
     public Object cache(ProceedingJoinPoint pjp, RainbowCache rainbowCache) throws Throwable {
         Object obj = null;
 
-        if (redisTemplate != null) {
+        // 配置文件中选择本地缓存 或者 redis无法连接
+        // 使用本地缓存
+        if (SIMPLE.equals(type) || redisTemplate == null) {
             obj = cacheable.redisCache(pjp, rainbowCache);
         }
-        obj = cacheable.localCache(obj, pjp, rainbowCache);
+
+        // 使用redis缓存
+        if (REDIS_TYPE.equals(type) && redisTemplate != null) {
+            obj = cacheable.localCache(pjp, rainbowCache);
+        }
         return obj;
     }
 
+    /**
+     * 清除缓存
+     *
+     * @param rainbowCacheClear rainbowCacheClear
+     */
     @Before("@annotation(rainbowCacheClear)")
     public void cacheClear(RainbowCacheClear rainbowCacheClear) {
         for (String value : rainbowCacheClear.keys()) {
             String key = value + ":" + rainbowCacheClear.dynamicKey();
             // 处理Redis
-            if (redisTemplate != null) {
+            if (REDIS_TYPE.equals(type) || redisTemplate != null) {
                 Set<String> keys = redisTemplate.keys(key);
                 if (keys == null || keys.size() == 0) {
                     continue;
@@ -71,6 +88,14 @@ public class CacheAspect {
         }
     }
 
+    /**
+     * 放置缓存
+     *
+     * @param pjp             pjp
+     * @param rainbowCachePut rainbowCachePut
+     * @return object
+     * @throws Throwable throwable
+     */
     @Around("@annotation(rainbowCachePut)")
     public Object cachePut(ProceedingJoinPoint pjp, RainbowCachePut rainbowCachePut) throws Throwable {
         Object obj = pjp.proceed();

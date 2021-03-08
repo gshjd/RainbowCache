@@ -30,13 +30,13 @@ public class Cacheable {
     /**
      * 使用本地缓存处理
      *
-     * @param object       objects that need to be cached
      * @param pjp          pjp
      * @param rainbowCache rainbowCache
      * @return result
      * @throws Throwable throwable
      */
-    public Object localCache(Object object, ProceedingJoinPoint pjp, RainbowCache rainbowCache) throws Throwable {
+    public Object localCache(ProceedingJoinPoint pjp, RainbowCache rainbowCache) throws Throwable {
+        Object object = null;
         // 获取el的值
         String dynamicKey = this.getValue(pjp, rainbowCache.dynamicKey());
 
@@ -44,14 +44,11 @@ public class Cacheable {
             // 真正存放缓存的key
             key += ":" + dynamicKey;
             // 查询key缓存是否存在
-            Object result = this.rainbowCache.getCache(key);
+            object = this.rainbowCache.getCache(key);
             // 缓存时间
             long expiration = rainbowCache.expiration();
-            if (!result.equals(object)) {
-                result = object;
-            }
             // 不存在走业务流程并设置缓存
-            if (result == null) {
+            if (object == null) {
                 // 业务返回值
                 object = pjp.proceed();
                 if (object != null) {
@@ -67,10 +64,10 @@ public class Cacheable {
             // 缓存存在 且 需要续期
             if (rainbowCache.renew()) {
                 if (expiration < 0) {
-                    this.rainbowCache.setCache(key, result);
+                    this.rainbowCache.setCache(key, object);
                     continue;
                 }
-                this.rainbowCache.setCache(key, result, expiration, TimeUnit.SECONDS);
+                this.rainbowCache.setCache(key, object, expiration, TimeUnit.SECONDS);
             }
         }
         return object;
