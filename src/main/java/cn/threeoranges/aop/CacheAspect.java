@@ -5,6 +5,7 @@ import cn.threeoranges.annotation.RainbowCacheClear;
 import cn.threeoranges.annotation.RainbowCachePut;
 import cn.threeoranges.annotation.RainbowDistributedLock;
 import cn.threeoranges.cache.Cacheable;
+import cn.threeoranges.properties.RainbowCacheProperties;
 import cn.threeoranges.thread.pool.WatchDogThreadPool;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -27,8 +28,7 @@ import java.util.concurrent.TimeUnit;
 
 @Aspect
 public class CacheAspect {
-    @Value("rainbow.cache.type")
-    private String type;
+    private final String type = new RainbowCacheProperties().getType();
     private final String REDIS_TYPE = "redis";
     private final String SIMPLE = "simple";
 
