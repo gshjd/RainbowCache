@@ -9,15 +9,12 @@ import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 
-import javax.annotation.Resource;
 import java.util.concurrent.TimeUnit;
 
 /**
  * @author: 李小熊
  **/
 public class Cacheable {
-    @Resource
-    private RedisTemplate<String, Object> redisTemplate;
     private final cn.threeoranges.cache.RainbowCache rainbowCache = cn.threeoranges.cache.RainbowCache.getRainbowCache();
 
     private Cacheable() {
@@ -38,11 +35,13 @@ public class Cacheable {
     public Object localCache(ProceedingJoinPoint pjp, RainbowCache rainbowCache) throws Throwable {
         Object object = null;
         // 获取el的值
-        String dynamicKey = this.getValue(pjp, rainbowCache.dynamicKey());
+        String dynamicKey = getValue(pjp, rainbowCache.dynamicKey());
 
         for (String key : rainbowCache.keys()) {
             // 真正存放缓存的key
-            key += ":" + dynamicKey;
+            if (!"".equals(dynamicKey)) {
+                key += ":" + dynamicKey;
+            }
             // 查询key缓存是否存在
             object = this.rainbowCache.getCache(key);
             // 缓存时间
@@ -81,13 +80,15 @@ public class Cacheable {
      * @return result
      * @throws Throwable throwable
      */
-    public Object redisCache(ProceedingJoinPoint pjp, RainbowCache rainbowCache) throws Throwable {
+    public Object redisCache(ProceedingJoinPoint pjp, RainbowCache rainbowCache, RedisTemplate<String, Object> redisTemplate) throws Throwable {
         Object object = null;
         // 获取el的值
-        String dynamicKey = this.getValue(pjp, rainbowCache.dynamicKey());
+        String dynamicKey = getValue(pjp, rainbowCache.dynamicKey());
         for (String key : rainbowCache.keys()) {
             // 真正存放缓存的key
-            key += ":" + dynamicKey;
+            if (!"".equals(dynamicKey)) {
+                key += ":" + dynamicKey;
+            }
 
             // 查询key缓存是否存在
             Object result = redisTemplate.opsForValue().get(key);
@@ -129,7 +130,10 @@ public class Cacheable {
      * @param el  el expression
      * @return el result
      */
-    public String getValue(ProceedingJoinPoint pjp, String el) {
+    public static String getValue(ProceedingJoinPoint pjp, String el) {
+        if (el == null || "".equals(el)) {
+            return "";
+        }
         SpelExpressionParser parserSpEl = new SpelExpressionParser();
         // 解析el表达式
         Expression expression = parserSpEl.parseExpression(el);
@@ -144,7 +148,7 @@ public class Cacheable {
         }
         // 获取表达式值
         Object object = expression.getValue(context);
-        return object == null ? null : object.toString();
+        return object == null ? "" : object.toString();
     }
 
     private static class Instance {

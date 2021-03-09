@@ -6,12 +6,12 @@ import cn.threeoranges.annotation.RainbowCachePut;
 import cn.threeoranges.annotation.RainbowDistributedLock;
 import cn.threeoranges.cache.Cacheable;
 import cn.threeoranges.properties.RainbowCacheProperties;
+import cn.threeoranges.properties.enums.RainbowCacheTypeEnum;
 import cn.threeoranges.thread.pool.WatchDogThreadPool;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
-import org.aspectj.lang.annotation.Before;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import javax.annotation.Resource;
@@ -20,19 +20,20 @@ import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
+import static cn.threeoranges.properties.enums.RainbowCacheTypeEnum.REDIS;
+import static cn.threeoranges.properties.enums.RainbowCacheTypeEnum.SIMPLE;
 
 /**
  * @author xiaoxiong
  */
-
 @Aspect
 public class CacheAspect {
-    private final String type = new RainbowCacheProperties().getType();
-    private final String REDIS_TYPE = "redis";
-    private final String SIMPLE = "simple";
-
     @Resource
+    private RainbowCacheProperties rainbowCacheProperties;
+    private RainbowCacheTypeEnum type;
+    @Autowired
     private RedisTemplate<String, Object> redisTemplate;
     private final Cacheable cacheable = Cacheable.cacheable();
     private final cn.threeoranges.cache.RainbowCache rainbowCache = cn.threeoranges.cache.RainbowCache.getRainbowCache();
@@ -48,16 +49,17 @@ public class CacheAspect {
     @Around("@annotation(rainbowCache)")
     public Object cache(ProceedingJoinPoint pjp, RainbowCache rainbowCache) throws Throwable {
         Object obj = null;
+        type = rainbowCacheProperties.getType();
 
         // 配置文件中选择本地缓存 或者 redis无法连接
         // 使用本地缓存
         if (SIMPLE.equals(type) || redisTemplate == null) {
-            obj = cacheable.redisCache(pjp, rainbowCache);
+            obj = cacheable.localCache(pjp, rainbowCache);
         }
 
         // 使用redis缓存
-        if (REDIS_TYPE.equals(type) && redisTemplate != null) {
-            obj = cacheable.localCache(pjp, rainbowCache);
+        if (REDIS.equals(type) && redisTemplate != null) {
+            obj = cacheable.redisCache(pjp, rainbowCache, redisTemplate);
         }
         return obj;
     }
@@ -67,25 +69,29 @@ public class CacheAspect {
      *
      * @param rainbowCacheClear rainbowCacheClear
      */
-    @Before("@annotation(rainbowCacheClear)")
-    public void cacheClear(RainbowCacheClear rainbowCacheClear) {
+    @Around("@annotation(rainbowCacheClear)")
+    public Object cacheClear(ProceedingJoinPoint pjp, RainbowCacheClear rainbowCacheClear) throws Throwable {
+        String dynamicKey = Cacheable.getValue(pjp, rainbowCacheClear.dynamicKey());
         for (String value : rainbowCacheClear.keys()) {
-            String key = value + ":" + rainbowCacheClear.dynamicKey();
+            if (!"".equals(dynamicKey)) {
+                value += ":" + dynamicKey;
+            }
             // 处理Redis
-            if (REDIS_TYPE.equals(type) || redisTemplate != null) {
-                Set<String> keys = redisTemplate.keys(key);
+            if (REDIS.equals(type) || redisTemplate != null) {
+                Set<String> keys = redisTemplate.keys(value);
                 if (keys == null || keys.size() == 0) {
                     continue;
                 }
                 redisTemplate.delete(keys);
             }
             // 处理本地缓存
-            Set<String> keys = rainbowCache.keys(key);
+            Set<String> keys = rainbowCache.keys(value);
             if (keys == null || keys.size() == 0) {
                 continue;
             }
             rainbowCache.delete(keys);
         }
+        return pjp.proceed();
     }
 
     /**
@@ -121,6 +127,14 @@ public class CacheAspect {
         return obj;
     }
 
+    /**
+     * 分布式锁
+     *
+     * @param pjp
+     * @param distributedLock
+     * @return
+     * @throws Throwable
+     */
     @Around("@annotation(distributedLock)")
     public Object distributedLock(ProceedingJoinPoint pjp, RainbowDistributedLock distributedLock) throws Throwable {
         String lockKey = "rainbowDistributedLock:" + distributedLock.key();
@@ -131,11 +145,17 @@ public class CacheAspect {
             throw new RuntimeException("lock error");
         }
 
+        long startTime = System.currentTimeMillis();
+        long timeOut = rainbowCacheProperties.getTimeOut();
+
         while (!success) {
             TimeUnit.SECONDS.sleep(1);
             success = redisTemplate.opsForValue().setIfAbsent(lockKey, lockValue, lockTime, TimeUnit.SECONDS);
             if (success == null) {
                 throw new RuntimeException("lock error");
+            }
+            if (timeOut != -1 && System.currentTimeMillis() - startTime > timeOut) {
+                throw new TimeoutException("The lock acquisition time is too long for more than " + timeOut + " seconds");
             }
         }
 

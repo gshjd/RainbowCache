@@ -1,5 +1,6 @@
 package cn.threeoranges.properties;
 
+import cn.threeoranges.properties.enums.RainbowCacheTypeEnum;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
@@ -11,13 +12,27 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConfigurationProperties(prefix = "rainbow.cache")
 public class RainbowCacheProperties {
-    private String type;
+    private RainbowCacheTypeEnum type;
+    private long timeOut;
 
-    public String getType() {
+    public RainbowCacheProperties() {
+        this.type = RainbowCacheTypeEnum.SIMPLE;
+        this.timeOut = 30000;
+    }
+
+    public RainbowCacheTypeEnum getType() {
         return type;
     }
 
-    public void setType(String type) {
+    public void setType(RainbowCacheTypeEnum type) {
         this.type = type;
+    }
+
+    public long getTimeOut() {
+        return timeOut;
+    }
+
+    public void setTimeOut(long timeOut) {
+        this.timeOut = timeOut;
     }
 }

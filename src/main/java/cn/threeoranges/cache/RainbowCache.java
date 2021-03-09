@@ -58,8 +58,12 @@ public class RainbowCache {
      * @param key key
      */
     public void triggerCleanUp(String key) {
-        long destroyTime = Long.parseLong(caches.get(key).get(DESTROY_TIME).toString());
-        if (destroyTime <= System.currentTimeMillis()) {
+        Map<String, Object> map = caches.get(key);
+        if (map == null) {
+            return;
+        }
+        long destroyTime = Long.parseLong(map.get(DESTROY_TIME).toString());
+        if (destroyTime != -1 && destroyTime <= System.currentTimeMillis()) {
             caches.remove(key);
         }
     }
@@ -119,13 +123,15 @@ public class RainbowCache {
     public Object getCache(String key) {
         setCachesVerify(key);
         triggerCleanUp(key);
-        return this.caches.get(key).get(VALUE);
+        Map<String, Object> map = this.caches.get(key);
+        return map == null ? null : map.get(VALUE);
     }
 
     public String getCacheToString(String key) {
         setCachesVerify(key);
         triggerCleanUp(key);
-        return this.caches.get(key).get(VALUE).toString();
+        Map<String, Object> map = this.caches.get(key);
+        return map == null ? null : map.get(VALUE).toString();
     }
 
     public Integer getCacheToInteger(String key) {
@@ -146,8 +152,8 @@ public class RainbowCache {
     public Character getCacheToCharacter(String key) {
         setCachesVerify(key);
         triggerCleanUp(key);
-        Object obj = this.caches.get(key).get(VALUE);
-        return obj == null ? null : (Character) obj;
+        Map<String, Object> map = this.caches.get(key);
+        return map == null ? null : (Character) map.get(VALUE);
     }
 
     public Short getCacheToShort(String key) {
@@ -168,28 +174,29 @@ public class RainbowCache {
     public <T> List<T> getCacheToList(String key) {
         setCachesVerify(key);
         triggerCleanUp(key);
-        Object obj = this.caches.get(key).get(VALUE);
-        return obj == null ? null : (List<T>) obj;
+        Map<String, Object> map = this.caches.get(key);
+        return map == null ? null : (List<T>) map.get(VALUE);
     }
 
     public <T> Set<T> getCacheToSet(String key) {
         setCachesVerify(key);
         triggerCleanUp(key);
-        Object obj = this.caches.get(key).get(VALUE);
-        return obj == null ? null : (Set<T>) obj;
+        Map<String, Object> map = this.caches.get(key);
+        return map == null ? null : (Set<T>) map.get(VALUE);
     }
 
     public <T, E> Map<T, E> getCacheToMap(String key) {
         setCachesVerify(key);
         triggerCleanUp(key);
-        Object obj = this.caches.get(key).get(VALUE);
-        return obj == null ? null : (Map<T, E>) obj;
+        Map<String, Object> map = this.caches.get(key);
+        return map == null ? null : (Map<T, E>) map.get(VALUE);
     }
 
     public Boolean getCacheExist(String key) {
         setCachesVerify(key);
         triggerCleanUp(key);
-        return this.caches.get(key).get(VALUE) == null;
+        Map<String, Object> map = this.caches.get(key);
+        return map != null && map.get(VALUE) != null;
     }
 
     public Set<String> keys() {

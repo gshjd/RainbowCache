@@ -1,0 +1,16 @@
+{
+  "properties": [
+    {
+      "name": "rainbow.cache.type",
+      "type": "cn.threeoranges.properties.enums.RainbowCacheTypeEnum",
+      "sourceType": "cn.threeoranges.properties.RainbowCacheProperties",
+      "description": "缓存模式 simple或redis，默认simple."
+    },
+    {
+      "name": "rainbow.cache.lock.time-out",
+      "type": "java.lang.Long",
+      "sourceType": "cn.threeoranges.properties.RainbowCacheProperties",
+      "description": "锁超时时间(毫秒)，默认30秒，-1为永不超时"
+    }
+  ]
+}
