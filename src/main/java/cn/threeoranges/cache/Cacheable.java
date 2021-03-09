@@ -50,13 +50,11 @@ public class Cacheable {
             if (object == null) {
                 // 业务返回值
                 object = pjp.proceed();
-                if (object != null) {
-                    if (expiration < 0) {
-                        this.rainbowCache.setCache(key, object);
-                        continue;
-                    }
-                    this.rainbowCache.setCache(key, object, expiration, TimeUnit.SECONDS);
+                if (expiration < 0) {
+                    this.rainbowCache.setCache(key, object);
+                    continue;
                 }
+                this.rainbowCache.setCache(key, object, expiration, TimeUnit.SECONDS);
                 continue;
             }
 
