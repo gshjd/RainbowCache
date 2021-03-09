@@ -8,6 +8,16 @@
 
 该缓存在redis挂掉的情况下，会自动切换本地缓存，以防止击穿DB。
 
+## POM引入
+
+```xml
+<dependency>
+  <groupId>cn.threeoranges</groupId>
+  <artifactId>RainbowCache</artifactId>
+  <version>1.0</version>
+</dependency>
+```
+
 ## 注解使用
 
 注解仅适用于Service实现层方法。
