@@ -5,6 +5,7 @@ import cn.threeoranges.annotation.RainbowCacheClear;
 import cn.threeoranges.annotation.RainbowCachePut;
 import cn.threeoranges.annotation.RainbowDistributedLock;
 import cn.threeoranges.cache.Cacheable;
+import cn.threeoranges.cache.SimpleCache;
 import cn.threeoranges.properties.RainbowCacheProperties;
 import cn.threeoranges.properties.enums.RainbowCacheTypeEnum;
 import cn.threeoranges.thread.pool.WatchDogThreadPool;
@@ -36,7 +37,7 @@ public class CacheAspect {
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
     private final Cacheable cacheable = Cacheable.cacheable();
-    private final cn.threeoranges.cache.RainbowCache rainbowCache = cn.threeoranges.cache.RainbowCache.getRainbowCache();
+    private final SimpleCache simpleCache = SimpleCache.simpleCache();
 
     /**
      * 缓存数据
@@ -85,11 +86,11 @@ public class CacheAspect {
                 redisTemplate.delete(keys);
             }
             // 处理本地缓存
-            Set<String> keys = rainbowCache.keys(value);
+            Set<String> keys = simpleCache.keys(value);
             if (keys == null || keys.size() == 0) {
                 continue;
             }
-            rainbowCache.delete(keys);
+            simpleCache.delete(keys);
         }
         return pjp.proceed();
     }
@@ -111,14 +112,14 @@ public class CacheAspect {
             if (obj != null) {
                 // 不带失效时间的缓存
                 if (expiration < 0) {
-                    rainbowCache.setCache(key, obj);
+                    simpleCache.setCache(key, obj);
                     if (redisTemplate != null) {
                         redisTemplate.opsForValue().set(key, obj);
                     }
                     continue;
                 }
                 // 带有失效时间的缓存
-                rainbowCache.setCache(key, obj, expiration, TimeUnit.SECONDS);
+                simpleCache.setCache(key, obj, expiration, TimeUnit.SECONDS);
                 if (redisTemplate != null) {
                     redisTemplate.opsForValue().set(key, obj, expiration, TimeUnit.MILLISECONDS);
                 }

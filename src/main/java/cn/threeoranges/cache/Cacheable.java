@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
  * @author: 李小熊
  **/
 public class Cacheable {
-    private final cn.threeoranges.cache.RainbowCache rainbowCache = cn.threeoranges.cache.RainbowCache.getRainbowCache();
+    private final SimpleCache simpleCache = SimpleCache.simpleCache();
 
     private Cacheable() {
     }
@@ -43,7 +43,7 @@ public class Cacheable {
                 key += ":" + dynamicKey;
             }
             // 查询key缓存是否存在
-            object = this.rainbowCache.getCache(key);
+            object = this.simpleCache.getCache(key);
             // 缓存时间
             long expiration = rainbowCache.expiration();
             // 不存在走业务流程并设置缓存
@@ -51,20 +51,20 @@ public class Cacheable {
                 // 业务返回值
                 object = pjp.proceed();
                 if (expiration < 0) {
-                    this.rainbowCache.setCache(key, object);
+                    this.simpleCache.setCache(key, object);
                     continue;
                 }
-                this.rainbowCache.setCache(key, object, expiration, TimeUnit.SECONDS);
+                this.simpleCache.setCache(key, object, expiration, TimeUnit.SECONDS);
                 continue;
             }
 
             // 缓存存在 且 需要续期
             if (rainbowCache.renew()) {
                 if (expiration < 0) {
-                    this.rainbowCache.setCache(key, object);
+                    this.simpleCache.setCache(key, object);
                     continue;
                 }
-                this.rainbowCache.setCache(key, object, expiration, TimeUnit.SECONDS);
+                this.simpleCache.setCache(key, object, expiration, TimeUnit.SECONDS);
             }
         }
         return object;

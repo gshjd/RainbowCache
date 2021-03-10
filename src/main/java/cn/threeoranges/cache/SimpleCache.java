@@ -2,41 +2,29 @@ package cn.threeoranges.cache;
 
 import org.springframework.scheduling.annotation.Scheduled;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
 
 /**
  * @author: 李小熊
  **/
-public class RainbowCache {
+public class SimpleCache {
 
     /**
      * 本地缓存
      */
-    private final Map<String, Map<String, Object>> caches = new HashMap<>();
-    /**
-     * 缓存有效时间(默认：秒)
-     */
-    private final String EXPIRATION = "expiration";
-    /**
-     * 缓存值
-     */
-    private final String VALUE = "value";
-    /**
-     * 缓存创建时间
-     */
-    private final String CREATE_TIME = "createTime";
-    /**
-     * 缓存过期时间点
-     */
-    private final String DESTROY_TIME = "destroyTime";
+    private final Map<String, ValueObject> caches = new ConcurrentHashMap<>();
     /**
      * 定时清理锁
      */
     private boolean clearLock = false;
 
-    private RainbowCache() {
+    private SimpleCache() {
 
     }
 
@@ -58,33 +46,27 @@ public class RainbowCache {
      * @param key key
      */
     public void triggerCleanUp(String key) {
-        Map<String, Object> map = caches.get(key);
-        if (map == null) {
+        ValueObject valueObject = caches.get(key);
+        if (valueObject == null) {
             return;
         }
-        long destroyTime = Long.parseLong(map.get(DESTROY_TIME).toString());
+        long destroyTime = valueObject.getDestroyTime();
         if (destroyTime != -1 && destroyTime <= System.currentTimeMillis()) {
             caches.remove(key);
         }
     }
 
-    public static RainbowCache getRainbowCache() {
+    public static SimpleCache simpleCache() {
         return Instance.INSTANCE;
     }
 
     private static class Instance {
-        private static final RainbowCache INSTANCE = new RainbowCache();
+        private static final SimpleCache INSTANCE = new SimpleCache();
     }
 
     public void setCache(String key, Object cache) {
-        setCachesVerify(key, cache);
-        Map<String, Object> map = new HashMap<>(4);
-        long now = System.currentTimeMillis();
-        map.put(VALUE, cache);
-        map.put(EXPIRATION, -1);
-        map.put(CREATE_TIME, now);
-        map.put(DESTROY_TIME, -1);
-        this.caches.put(key, map);
+        ValueObject valueObject = new ValueObject(cache, -1L, -1L);
+        this.caches.put(key, valueObject);
     }
 
     /**
@@ -97,41 +79,21 @@ public class RainbowCache {
      * @param timeUnit   timeUnit
      */
     public void setCache(String key, Object cache, long expiration, TimeUnit timeUnit) {
-        setCachesVerify(key, cache);
-        Map<String, Object> map = new HashMap<>(4);
         long now = System.currentTimeMillis();
-        map.put(VALUE, cache);
-        map.put(EXPIRATION, expiration);
-        map.put(CREATE_TIME, now);
-        map.put(DESTROY_TIME, now + (expiration * 1000L));
-        this.caches.put(key, map);
-    }
-
-    public void setCachesVerify(String key, Object cache) {
-        setCachesVerify(key);
-        if (cache == null) {
-            throw new RuntimeException("value can not be null");
-        }
-    }
-
-    public void setCachesVerify(String key) {
-        if (key == null) {
-            throw new RuntimeException("key can not be null");
-        }
+        ValueObject valueObject = new ValueObject(cache, -expiration, now + (expiration * 1000L));
+        this.caches.put(key, valueObject);
     }
 
     public Object getCache(String key) {
-        setCachesVerify(key);
         triggerCleanUp(key);
-        Map<String, Object> map = this.caches.get(key);
-        return map == null ? null : map.get(VALUE);
+        ValueObject valueObject = caches.get(key);
+        return valueObject == null ? null : valueObject.getValue();
     }
 
     public String getCacheToString(String key) {
-        setCachesVerify(key);
         triggerCleanUp(key);
-        Map<String, Object> map = this.caches.get(key);
-        return map == null ? null : map.get(VALUE).toString();
+        ValueObject valueObject = caches.get(key);
+        return valueObject == null ? null : valueObject.getValue().toString();
     }
 
     public Integer getCacheToInteger(String key) {
@@ -150,10 +112,9 @@ public class RainbowCache {
     }
 
     public Character getCacheToCharacter(String key) {
-        setCachesVerify(key);
         triggerCleanUp(key);
-        Map<String, Object> map = this.caches.get(key);
-        return map == null ? null : (Character) map.get(VALUE);
+        ValueObject valueObject = caches.get(key);
+        return valueObject == null ? null : (Character) valueObject.getValue();
     }
 
     public Short getCacheToShort(String key) {
@@ -172,39 +133,41 @@ public class RainbowCache {
     }
 
     public <T> List<T> getCacheToList(String key) {
-        setCachesVerify(key);
+
         triggerCleanUp(key);
-        Map<String, Object> map = this.caches.get(key);
-        return map == null ? null : (List<T>) map.get(VALUE);
+        ValueObject valueObject = caches.get(key);
+        return valueObject == null ? null : (List<T>) valueObject.getValue();
     }
 
     public <T> Set<T> getCacheToSet(String key) {
-        setCachesVerify(key);
+
         triggerCleanUp(key);
-        Map<String, Object> map = this.caches.get(key);
-        return map == null ? null : (Set<T>) map.get(VALUE);
+        ValueObject valueObject = caches.get(key);
+        return valueObject == null ? null : (Set<T>) valueObject.getValue();
     }
 
     public <T, E> Map<T, E> getCacheToMap(String key) {
-        setCachesVerify(key);
         triggerCleanUp(key);
-        Map<String, Object> map = this.caches.get(key);
-        return map == null ? null : (Map<T, E>) map.get(VALUE);
+        ValueObject valueObject = caches.get(key);
+        return valueObject == null ? null : (Map<T, E>) valueObject.getValue();
     }
 
     public Boolean getCacheExist(String key) {
-        setCachesVerify(key);
         triggerCleanUp(key);
-        Map<String, Object> map = this.caches.get(key);
-        return map != null && map.get(VALUE) != null;
+        ValueObject valueObject = caches.get(key);
+        return valueObject != null && valueObject.getValue() != null;
     }
 
     public Set<String> keys() {
         return caches.keySet();
     }
 
+    public int size() {
+        return caches.size();
+    }
+
     public Set<String> keys(String key) {
-        setCachesVerify(key);
+
         triggerCleanUp(key);
         Set<String> keys = new CopyOnWriteArraySet<>();
         caches.keySet().parallelStream().forEach(str -> {
@@ -215,7 +178,7 @@ public class RainbowCache {
         return keys;
     }
 
-    public synchronized void delete(String key) {
+    public void delete(String key) {
         caches.remove(key);
     }
 
