@@ -121,15 +121,4 @@ public class WindowTinyLru {
     private static class Instance {
         private static final WindowTinyLru INSTANCE = new WindowTinyLru();
     }
-
-    public static void main(String[] args) {
-        Map<String, Object> map = new LinkedHashMap<>();
-        for (int i = 0; i < 100; i++) {
-            map.put(String.valueOf(i), i);
-        }
-
-        System.out.println(map.entrySet().iterator().next());
-
-        System.out.println(1000 * 60 *60);
-    }
 }
