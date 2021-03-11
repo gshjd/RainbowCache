@@ -11,6 +11,12 @@
       "type": "java.lang.Long",
       "sourceType": "cn.threeoranges.properties.RainbowCacheProperties",
       "description": "锁超时时间(毫秒)，默认30秒，-1为永不超时"
+    },
+    {
+      "name": "rainbow.cache.lock.length",
+      "type": "java.lang.Integer",
+      "sourceType": "cn.threeoranges.properties.RainbowCacheProperties",
+      "description": "本地缓存空间长度，默认Integer的最大值"
     }
   ]
 }

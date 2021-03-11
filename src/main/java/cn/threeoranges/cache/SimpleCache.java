@@ -2,7 +2,6 @@ package cn.threeoranges.cache;
 
 import org.springframework.scheduling.annotation.Scheduled;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -184,5 +183,9 @@ public class SimpleCache {
 
     public void delete(Set<String> set) {
         set.parallelStream().forEach(this::delete);
+    }
+
+    public static void main(String[] args) {
+        System.out.println(3/10);
     }
 }

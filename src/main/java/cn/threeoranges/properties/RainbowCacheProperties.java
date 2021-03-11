@@ -13,11 +13,21 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties(prefix = "rainbow.cache")
 public class RainbowCacheProperties {
     private RainbowCacheTypeEnum type;
-    private long timeOut;
+    private Long timeOut;
+    private Integer length;
 
     public RainbowCacheProperties() {
         this.type = RainbowCacheTypeEnum.SIMPLE;
-        this.timeOut = 30000;
+        this.timeOut = 30000L;
+        this.length = Integer.MAX_VALUE;
+    }
+
+    public Integer getLength() {
+        return length;
+    }
+
+    public void setLength(Integer length) {
+        this.length = length;
     }
 
     public RainbowCacheTypeEnum getType() {
@@ -28,11 +38,11 @@ public class RainbowCacheProperties {
         this.type = type;
     }
 
-    public long getTimeOut() {
+    public Long getTimeOut() {
         return timeOut;
     }
 
-    public void setTimeOut(long timeOut) {
+    public void setTimeOut(Long timeOut) {
         this.timeOut = timeOut;
     }
 }

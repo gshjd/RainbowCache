@@ -1,3 +1,4 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
   cn.threeoranges.aop.CacheAspect,\
-  cn.threeoranges.properties.RainbowCacheProperties
+  cn.threeoranges.properties.RainbowCacheProperties,\
+  cn.threeoranges.window.tiny.lru.WindowTinyLru
