@@ -184,8 +184,4 @@ public class SimpleCache {
     public void delete(Set<String> set) {
         set.parallelStream().forEach(this::delete);
     }
-
-    public static void main(String[] args) {
-        System.out.println(3/10);
-    }
 }
