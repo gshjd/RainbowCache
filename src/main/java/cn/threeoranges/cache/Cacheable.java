@@ -9,20 +9,15 @@ import org.springframework.expression.Expression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 
+import javax.annotation.Resource;
 import java.util.concurrent.TimeUnit;
 
 /**
  * @author: 李小熊
  **/
 public class Cacheable {
-    private final SimpleCache simpleCache = SimpleCache.simpleCache();
-
-    private Cacheable() {
-    }
-
-    public static Cacheable cacheable() {
-        return Instance.INSTANCE;
-    }
+    @Resource
+    private SimpleCache simpleCache;
 
     /**
      * 使用本地缓存处理
@@ -147,9 +142,5 @@ public class Cacheable {
         // 获取表达式值
         Object object = expression.getValue(context);
         return object == null ? "" : object.toString();
-    }
-
-    private static class Instance {
-        private static final Cacheable INSTANCE = new Cacheable();
     }
 }

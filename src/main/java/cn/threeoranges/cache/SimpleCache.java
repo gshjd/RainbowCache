@@ -1,7 +1,10 @@
 package cn.threeoranges.cache;
 
+import cn.threeoranges.window.tiny.lru.WindowTinyLru;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
 
+import javax.annotation.Resource;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -12,7 +15,11 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author: 李小熊
  **/
+@Component
 public class SimpleCache {
+
+    @Resource
+    private WindowTinyLru windowTinyLru;
 
     /**
      * 本地缓存
@@ -23,9 +30,6 @@ public class SimpleCache {
      */
     private boolean clearLock = false;
 
-    private SimpleCache() {
-
-    }
 
     /**
      * 定时清理过期缓存(10s)
@@ -55,17 +59,10 @@ public class SimpleCache {
         }
     }
 
-    public static SimpleCache simpleCache() {
-        return Instance.INSTANCE;
-    }
-
-    private static class Instance {
-        private static final SimpleCache INSTANCE = new SimpleCache();
-    }
-
     public void setCache(String key, Object cache) {
         ValueObject valueObject = new ValueObject(cache, -1L, -1L);
         this.caches.put(key, valueObject);
+        windowTinyLru.dataFilter(key);
     }
 
     /**
@@ -81,18 +78,27 @@ public class SimpleCache {
         long now = System.currentTimeMillis();
         ValueObject valueObject = new ValueObject(cache, -expiration, now + (expiration * 1000L));
         this.caches.put(key, valueObject);
+        windowTinyLru.dataFilter(key);
+    }
+
+    private Object result(String key) {
+        triggerCleanUp(key);
+        ValueObject valueObject = caches.get(key);
+        if (valueObject != null) {
+            windowTinyLru.dataFilter(key);
+            return valueObject.getValue();
+        }
+        return null;
     }
 
     public Object getCache(String key) {
         triggerCleanUp(key);
-        ValueObject valueObject = caches.get(key);
-        return valueObject == null ? null : valueObject.getValue();
+        return result(key);
     }
 
     public String getCacheToString(String key) {
-        triggerCleanUp(key);
-        ValueObject valueObject = caches.get(key);
-        return valueObject == null ? null : valueObject.getValue().toString();
+        Object result = result(key);
+        return result == null ? null : result.toString();
     }
 
     public Integer getCacheToInteger(String key) {
@@ -111,9 +117,8 @@ public class SimpleCache {
     }
 
     public Character getCacheToCharacter(String key) {
-        triggerCleanUp(key);
-        ValueObject valueObject = caches.get(key);
-        return valueObject == null ? null : (Character) valueObject.getValue();
+        Object result = result(key);
+        return result == null ? null : (Character) result;
     }
 
     public Short getCacheToShort(String key) {
@@ -132,28 +137,24 @@ public class SimpleCache {
     }
 
     public <T> List<T> getCacheToList(String key) {
-
-        triggerCleanUp(key);
-        ValueObject valueObject = caches.get(key);
-        return valueObject == null ? null : (List<T>) valueObject.getValue();
+        Object result = result(key);
+        return result == null ? null : (List<T>) result;
     }
 
     public <T> Set<T> getCacheToSet(String key) {
-
-        triggerCleanUp(key);
-        ValueObject valueObject = caches.get(key);
-        return valueObject == null ? null : (Set<T>) valueObject.getValue();
+        Object result = result(key);
+        return result == null ? null : (Set<T>) result;
     }
 
     public <T, E> Map<T, E> getCacheToMap(String key) {
-        triggerCleanUp(key);
-        ValueObject valueObject = caches.get(key);
-        return valueObject == null ? null : (Map<T, E>) valueObject.getValue();
+        Object result = result(key);
+        return result == null ? null : (Map<T, E>) result;
     }
 
     public Boolean getCacheExist(String key) {
         triggerCleanUp(key);
         ValueObject valueObject = caches.get(key);
+        windowTinyLru.dataFilter(key);
         return valueObject != null && valueObject.getValue() != null;
     }
 
@@ -166,7 +167,6 @@ public class SimpleCache {
     }
 
     public Set<String> keys(String key) {
-
         triggerCleanUp(key);
         Set<String> keys = new CopyOnWriteArraySet<>();
         caches.keySet().parallelStream().forEach(str -> {

@@ -3,6 +3,7 @@ package cn.threeoranges.properties;
 import cn.threeoranges.properties.enums.RainbowCacheTypeEnum;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
 
 /**
  * @author: 李小熊

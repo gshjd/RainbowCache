@@ -1,6 +1,8 @@
 package cn.threeoranges.window.tiny.lru;
 
 import cn.threeoranges.properties.RainbowCacheProperties;
+import cn.threeoranges.thread.pool.WindowTinyLruPool;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import javax.annotation.Resource;
@@ -19,21 +21,24 @@ public class WindowTinyLru {
     /**
      * 冷数据段
      */
-    private final Map<String, CacheFrequency> coldDataPassage;
+    private  Map<String, CacheFrequency> coldDataPassage;
     /**
      * 热数据段
      */
-    private final Map<String, CacheFrequency> heatDataPassage;
+    private  Map<String, CacheFrequency> heatDataPassage;
     /**
      * 冷数据段长度
      */
-    private final int coldDataPassageSize;
+    private  int coldDataPassageSize;
     /**
      * 热数据段长度
      */
-    private final int heatDataPassageSize;
+    private  int heatDataPassageSize;
+    private CacheFrequency cacheFrequency;
 
-    private WindowTinyLru() {
+
+    @Bean
+    void init() {
         // 初始化数据段
         int size = rainbowCacheProperties.getLength() * 2 / 100;
         coldDataPassageSize = size == 0 ? 1 : size;
@@ -42,11 +47,11 @@ public class WindowTinyLru {
         heatDataPassage = new LinkedHashMap<>(heatDataPassageSize);
     }
 
-    public WindowTinyLru windowTinyLru() {
-        return Instance.INSTANCE;
+    public void dataFilter(String key) {
+        WindowTinyLruPool.windowTinyLru().execute(() -> filter(key));
     }
 
-    public synchronized void filter(String key) {
+    private synchronized void filter(String key) {
         CacheFrequency cacheFrequency = new CacheFrequency(key, 1, System.currentTimeMillis());
         // 队列均为空，数据放入冷段
         if (coldDataPassage.size() == 0 && heatDataPassage.size() == 0) {
@@ -58,7 +63,7 @@ public class WindowTinyLru {
         // 数据存在，和热数据尾部比较
         CacheFrequency data = coldDataPassage.get(key);
         if (data != null) {
-            cacheFrequency.setTotal(cacheFrequency.getTotal() + 1);
+            cacheFrequency.setTotal(data.getTotal() + 1);
             if (heatDataPassage.size() == 0 || heatDataPassage.size() < heatDataPassageSize) {
                 // 热数据段未满
                 coldDataPassage.remove(key);
@@ -73,6 +78,7 @@ public class WindowTinyLru {
         // 数据存在，推到尾部
         data = heatDataPassage.get(key);
         if (data != null) {
+            cacheFrequency.setTotal(data.getTotal() + 1);
             heatDataPassage.put(key, cacheFrequency);
             return;
         }
@@ -116,9 +122,5 @@ public class WindowTinyLru {
         if (coldDataPassage.size() >= coldDataPassageSize) {
             coldDataPassage.remove(heatDataPassage.entrySet().iterator().next().getKey());
         }
-    }
-
-    private static class Instance {
-        private static final WindowTinyLru INSTANCE = new WindowTinyLru();
     }
 }

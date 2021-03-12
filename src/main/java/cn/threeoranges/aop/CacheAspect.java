@@ -36,8 +36,10 @@ public class CacheAspect {
     private RainbowCacheTypeEnum type;
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
-    private final Cacheable cacheable = Cacheable.cacheable();
-    private final SimpleCache simpleCache = SimpleCache.simpleCache();
+    @Resource
+    private Cacheable cacheable;
+    @Resource
+    private SimpleCache simpleCache;
 
     /**
      * 缓存数据
