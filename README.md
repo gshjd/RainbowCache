@@ -73,3 +73,7 @@ key属性表示改锁的唯一键，用来控制锁的唯一性。该注解会�
 ### 2. rainbow.cache.lock.time-out
 
 分布式锁超时时间(毫秒)，默认30，单位为秒，-1为永不超时
+
+### 3.rainbow.cache.lock.length
+
+本地缓存空间长度，默认Integer的最大值
