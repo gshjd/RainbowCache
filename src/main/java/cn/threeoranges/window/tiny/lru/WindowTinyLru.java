@@ -34,7 +34,6 @@ public class WindowTinyLru {
      * 热数据段长度
      */
     private  int heatDataPassageSize;
-    private CacheFrequency cacheFrequency;
 
 
     @Bean
