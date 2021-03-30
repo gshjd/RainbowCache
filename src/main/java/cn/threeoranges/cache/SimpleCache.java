@@ -34,7 +34,7 @@ public class SimpleCache {
     /**
      * 定时清理过期缓存(10s)
      */
-    @Scheduled(cron = "0/10 * * * * ? *")
+    @Scheduled(cron = "0/10 * * * * ?")
     private void cleanUpTask() {
         if (clearLock) {
             return;

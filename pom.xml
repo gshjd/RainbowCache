@@ -7,7 +7,7 @@
     <groupId>cn.threeoranges</groupId>
     <artifactId>RainbowCache</artifactId>
     <name>RainbowCache</name>
-    <version>1.1.0</version>
+    <version>1.1.1</version>
     <description>A set of cache annotations to improve system performance and development efficiency</description>
     <url>https://github.com/gshjd/RainbowCache</url>
     <licenses>
