@@ -30,11 +30,18 @@ public class Cacheable {
     public Object localCache(ProceedingJoinPoint pjp, RainbowCache rainbowCache) throws Throwable {
         Object object = null;
         // 获取el的值
-        String dynamicKey = getValue(pjp, rainbowCache.dynamicKey());
+        String[] els = rainbowCache.dynamicKey().split("#");
+        StringBuilder dynamicKey = new StringBuilder();
+        for (String el : els) {
+            if (el == null || "".equals(el)) {
+                continue;
+            }
+            dynamicKey.append(getValue(pjp, "#" + el));
+        }
 
         for (String key : rainbowCache.keys()) {
             // 真正存放缓存的key
-            if (!"".equals(dynamicKey)) {
+            if (!"".equals(dynamicKey.toString())) {
                 key += ":" + dynamicKey;
             }
             // 查询key缓存是否存在
@@ -76,10 +83,17 @@ public class Cacheable {
     public Object redisCache(ProceedingJoinPoint pjp, RainbowCache rainbowCache, RedisTemplate<String, Object> redisTemplate) throws Throwable {
         Object object = null;
         // 获取el的值
-        String dynamicKey = getValue(pjp, rainbowCache.dynamicKey());
+        String[] els = rainbowCache.dynamicKey().split("#");
+        StringBuilder dynamicKey = new StringBuilder();
+        for (String el : els) {
+            if (el == null || "".equals(el)) {
+                continue;
+            }
+            dynamicKey.append(getValue(pjp, "#" + el));
+        }
         for (String key : rainbowCache.keys()) {
             // 真正存放缓存的key
-            if (!"".equals(dynamicKey)) {
+            if (!"".equals(dynamicKey.toString())) {
                 key += ":" + dynamicKey;
             }
 

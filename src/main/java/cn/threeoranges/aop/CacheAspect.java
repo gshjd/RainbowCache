@@ -14,6 +14,7 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
 import java.lang.management.ManagementFactory;
@@ -30,12 +31,13 @@ import static cn.threeoranges.properties.enums.RainbowCacheTypeEnum.SIMPLE;
  * @author xiaoxiong
  */
 @Aspect
+@Component
 public class CacheAspect {
     @Resource
     private RainbowCacheProperties rainbowCacheProperties;
     private RainbowCacheTypeEnum type;
     @Autowired
-    private RedisTemplate<String, Object> redisTemplate;
+    private RedisTemplate redisTemplate;
     @Resource
     private Cacheable cacheable;
     @Resource
