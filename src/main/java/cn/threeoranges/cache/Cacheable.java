@@ -1,8 +1,10 @@
 package cn.threeoranges.cache;
 
 import cn.threeoranges.annotation.RainbowCache;
+import cn.threeoranges.properties.RainbowCacheProperties;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
@@ -11,6 +13,7 @@ import org.springframework.expression.spel.support.StandardEvaluationContext;
 
 import javax.annotation.Resource;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * @author: 李小熊
@@ -18,6 +21,9 @@ import java.util.concurrent.TimeUnit;
 public class Cacheable {
     @Resource
     private SimpleCache simpleCache;
+    @Resource
+    private RainbowCacheProperties rainbowCacheProperties;
+    private final String LOCK_KEY = "rainbow:cache:lock";
 
     /**
      * 使用本地缓存处理
@@ -50,14 +56,20 @@ public class Cacheable {
             long expiration = rainbowCache.expiration();
             // 不存在走业务流程并设置缓存
             if (object == null) {
-                // 业务返回值
-                object = pjp.proceed();
-                if (expiration < 0) {
-                    this.simpleCache.setCache(key, object);
+                // 查询key缓存是否存在
+                synchronized (this) {
+                    object = this.simpleCache.getCache(key);
+                }
+                if (object == null) {
+                    // 业务返回值
+                    object = pjp.proceed();
+                    if (expiration < 0) {
+                        this.simpleCache.setCache(key, object);
+                        continue;
+                    }
+                    this.simpleCache.setCache(key, object, expiration, TimeUnit.SECONDS);
                     continue;
                 }
-                this.simpleCache.setCache(key, object, expiration, TimeUnit.SECONDS);
-                continue;
             }
 
             // 缓存存在 且 需要续期
@@ -97,20 +109,25 @@ public class Cacheable {
                 key += ":" + dynamicKey;
             }
 
-            // 查询key缓存是否存在
             Object result = redisTemplate.opsForValue().get(key);
             // 缓存时间
             long expiration = rainbowCache.expiration();
             // 不存在走业务流程并设置缓存
             if (result == null) {
-                // 业务返回值
-                object = pjp.proceed();
-                if (expiration < 0) {
-                    redisTemplate.opsForValue().set(key, object);
+                // 获取锁，阻塞
+                DistributedLock.distributedLock(redisTemplate, LOCK_KEY, rainbowCacheProperties);
+                // 查询key缓存是否存在
+                result = redisTemplate.opsForValue().get(key);
+                if (result == null) {
+                    // 业务返回值
+                    object = pjp.proceed();
+                    if (expiration < 0) {
+                        redisTemplate.opsForValue().set(key, object);
+                        continue;
+                    }
+                    redisTemplate.opsForValue().set(key, object, expiration, TimeUnit.MILLISECONDS);
                     continue;
                 }
-                redisTemplate.opsForValue().set(key, object, expiration, TimeUnit.MILLISECONDS);
-                continue;
             }
 
             // 缓存存在 且 需要续期
